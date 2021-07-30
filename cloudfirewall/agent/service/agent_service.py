@@ -15,7 +15,7 @@ from cloudfirewall.grpc.nft_pb2 import RulesetRequest
 
 from cloudfirewall.version import VERSION
 
-HEARTBEAT_INTERVAL = 5  # Seconds
+HEARTBEAT_INTERVAL = 3  # Seconds
 
 RULESET_INTERVAL = 2
 
@@ -82,53 +82,27 @@ class AgentFirewall(TaskManager):
 
             response = self.stub.Agent(ruleset_request)
             self.logger.info(response.request_id)
-            self.logger.info(
-                {"table":response.table,"chain":response.chain_in,"protocol":response.protocol,
-                 "port":response.port,"ip_saddr":response.ip_saddr,"ip_daddr":response.ip_daddr,
-                  "rule":response.rule
-                 })
+            self.logger.info(response.send_content_nft)
 
+
+            # firewall.nft file will be created where all the response of the agent_servicer are stored
+            with open("firewall.nft","w") as f:
+                firewall_content = response.send_content_nft[1:-1]  #[1:-1] removes the last character i.e ""
+                for line in firewall_content.split("\\n"):
+                    if line:
+                        print(f"line: {line}")
+                        f.write(line+"\n")
+
+
+
+            #The generated firewall.nft will be read on the system
+            #and firewall rules will be implemented
             sudoPassword = 'gagan@gbs123'
 
-            command_flush = f'nft flush ruleset'
+            command__to_read_nft_file = f'nft -f firewall.nft'
 
-            f = os.system('echo %s|sudo -S %s' % (sudoPassword, command_flush))
+            f = os.system('echo %s|sudo -S %s' % (sudoPassword, command__to_read_nft_file))
             print(f)
-
-
-            command = f'nft add table inet {response.table}'
-
-            p = os.system('echo %s|sudo -S %s' % (sudoPassword , command))
-            print(p)
-
-            # chain_inbound = 'nft add chain inet {} {}'
-            # a_in = chain_inbound.format(response.table, response.chain_in) + "" + "\{ type filter hook input priority 0\; policy accept\; \}"
-            # c_in = os.system('echo %s|sudo -S %s' % (sudoPassword, a_in))
-            # print(c_in)
-            # #To add new rules
-            # rule_in = [
-            #     f'nft add rule inet {response.table} {response.chain_in} ip saddr {response.ip_saddr} drop',
-            #
-            # ]
-            # for i in rule_in:
-            #     r_in = os.system('echo %s|sudo -S %s' % (sudoPassword, i))
-            #     print(r_in)
-            #
-            # chain_outbound = 'nft add chain inet {} {}'
-            # a_out= chain_outbound.format(response.table,response.chain_out) + "" + "\{ type filter hook output priority 0\; policy accept\; \}"
-            # c_out = os.system('echo %s|sudo -S %s' % (sudoPassword, a_out))
-            # print(c_out)
-            # # To add new rules
-            # rule_out = [
-            #
-            #     f'nft add rule inet {response.table} {response.chain_out} ip daddr { response.ip_daddr } drop'
-            # ]
-            # for i in rule_out:
-            #     r_out = os.system('echo %s|sudo -S %s' % (sudoPassword, i))
-            #     print(r_out)
-
-
-
 
 
         except grpc.RpcError as rpc_error:

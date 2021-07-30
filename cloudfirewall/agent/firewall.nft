@@ -1,0 +1,13 @@
+#!/usr/bin/nft -f
+flush ruleset 
+table inet Master {
+        chain input{ 
+                type filter hook input priority 0; policy accept;
+                ip saddr 192.168.1.1 tcp dport 122 drop;
+ip saddr 192.168.2.3 udp dport 455 accept;
+        }  
+        chain output {
+                 type filter hook output priority 0; policy accept;
+                 ip saddr 192.168.1.13 udp dport 222 drop;
+        }
+}        
