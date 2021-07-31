@@ -1,3 +1,4 @@
+from _typeshed import Self
 import logging
 import os
 import time
@@ -83,6 +84,7 @@ class AgentFirewall(TaskManager):
             response = self.stub.Agent(ruleset_request)
             self.logger.info(response.request_id)
             self.logger.info(response.send_content_nft)
+            self.logger.info(response)
 
 
             # firewall.nft file will be created where all the response of the agent_servicer are stored
@@ -97,12 +99,19 @@ class AgentFirewall(TaskManager):
 
             #The generated firewall.nft will be read on the system
             #and firewall rules will be implemented
-            sudoPassword = 'gagan@gbs123'
+
+
+            #--------------uncomment the below line to run the command---------
+            #--------------replace the password with your system password---------
+
+            sudoPassword = 'gagan@gbs123'    #senitive
 
             command__to_read_nft_file = f'nft -f firewall.nft'
 
+           
             f = os.system('echo %s|sudo -S %s' % (sudoPassword, command__to_read_nft_file))
             print(f)
+
 
 
         except grpc.RpcError as rpc_error:
@@ -112,3 +121,4 @@ class AgentFirewall(TaskManager):
                 self.logger.error("GRPC service unavailable")
             else:
                 self.logger.error(f"Unknown RPC error: code={rpc_error.code()}, message={rpc_error.details()}")
+
